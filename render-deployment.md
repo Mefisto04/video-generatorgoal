@@ -40,16 +40,35 @@ Adjust these settings:
 - **Health Check Path**: /health
 - **Auto-Deploy**: Yes (optional)
 - **Persistent Disk**: Add at least 1GB for temporary file storage
+- **Start Command**: Leave empty (Dockerfile uses CMD to run gunicorn)
+
+> Note: If you need to override the start command, you can use:
+>
+> ```
+> gunicorn --bind 0.0.0.0:8000 api_server:app
+> ```
 
 ### 5. Deploy
 
 Click "Create Web Service" and wait for the deployment to complete.
+
+## Troubleshooting
+
+If your deployment fails, check the build logs for specific errors:
+
+1. **Environment Variable Issues**: Make sure all required environment variables are set in the Render dashboard
+2. **Memory/Resource Issues**: Video processing requires significant resources, consider upgrading your plan
+3. **Build Failures**: Ensure all dependencies are correctly specified in requirements.txt
 
 ## Testing the Deployed Service
 
 Once deployed, you can test the API using curl:
 
 ```bash
+# Test the health endpoint
+curl https://your-render-service-url.onrender.com/health
+
+# Process a video
 curl -X POST https://your-render-service-url.onrender.com/process \
   -F "file=@/path/to/your/video.mp4" \
   -o processed-video.mp4
@@ -60,4 +79,4 @@ curl -X POST https://your-render-service-url.onrender.com/process \
 After successful deployment, Render will provide a URL like:
 `https://video-processor-xxxx.onrender.com`
 
-Use this URL in your Next.js API route by replacing the Python script execution with an HTTP request to this endpoint.
+Copy this URL and set it as the `VIDEO_PROCESSOR_URL` environment variable in your Next.js application's Vercel deployment.

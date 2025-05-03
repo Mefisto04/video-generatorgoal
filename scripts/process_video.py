@@ -196,4 +196,4 @@ if __name__ == "__main__":
         
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    process_video(input_path, output_path)
+    process_video(input_path, output_path) 

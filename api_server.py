@@ -7,13 +7,20 @@ import uuid
 import requests
 import json
 from dotenv import load_dotenv
+import importlib.util
 
-# Import the video processing function
+# Add scripts directory to path
 sys.path.append('./scripts')
-from process_video import process_video
 
-# Load environment variables
-load_dotenv()
+# Import the video processing function from the renamed file (with underscore)
+from scripts.process_video import process_video
+
+# Load environment variables (continue even if .env file doesn't exist)
+try:
+    load_dotenv()
+    print("Loaded environment variables from .env file")
+except Exception as e:
+    print(f"Note: Could not load .env file: {e}. Using system environment variables.")
 
 app = Flask(__name__)
 
@@ -29,7 +36,14 @@ def allowed_file(filename):
 @app.route('/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
-    return jsonify({'status': 'ok'}), 200
+    return jsonify({
+        'status': 'ok',
+        'environment': {
+            'API_KEY_SET': bool(os.environ.get('PEXELS_API_KEY')),
+            'MAX_BROLLS': os.environ.get('MAX_BROLLS', '5'),
+            'WHISPER_MODEL': os.environ.get('WHISPER_MODEL', 'base')
+        }
+    }), 200
 
 @app.route('/process', methods=['POST'])
 def process_video_endpoint():

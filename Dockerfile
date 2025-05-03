@@ -15,15 +15,17 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy the scripts directory first (includes search_terms.json)
 COPY scripts/ ./scripts/
-COPY --chown=root:root .env* ./ 2>/dev/null || true
 
 # Create an API server for the video processing service
 COPY api_server.py .
 
+# Create the necessary directories
+RUN mkdir -p /tmp/uploads
+
 # Expose the port the API will run on
 EXPOSE 8000
 
-# Run the API server
-CMD ["python", "api_server.py"] 
+# Run the API server with gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "300", "api_server:app"] 
