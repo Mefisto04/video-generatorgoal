@@ -1,13 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create Supabase client with error handling for build time
+function getSupabaseClient() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        console.warn('Supabase credentials not available during build');
+        // Return a mock client for build time
+        return {
+            from: () => ({
+                select: () => ({
+                    eq: () => ({
+                        single: async () => ({ data: null, error: null })
+                    })
+                })
+            })
+        };
+    }
+
+    return createClient(supabaseUrl, supabaseKey);
+}
 
 export async function GET(request: Request) {
     try {
+        const supabase = getSupabaseClient();
         const { searchParams } = new URL(request.url);
         const videoId = searchParams.get('id');
 
@@ -16,6 +34,15 @@ export async function GET(request: Request) {
                 { error: 'Video ID is required' },
                 { status: 400 }
             );
+        }
+
+        // Skip database query during build time
+        if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'build') {
+            return NextResponse.json({
+                url: 'https://example.com/placeholder-during-build.mp4',
+                captions: 'Placeholder captions during build',
+                status: 'build'
+            });
         }
 
         const { data, error } = await supabase
