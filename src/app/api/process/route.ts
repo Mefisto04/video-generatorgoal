@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
-// URL for the deployed video processor service on Render
 const VIDEO_PROCESSOR_URL = process.env.VIDEO_PROCESSOR_URL || 'http://localhost:8000';
 
 export async function POST(request: Request) {

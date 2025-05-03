@@ -36,7 +36,6 @@ export async function GET(request: Request) {
             );
         }
 
-        // Skip database query during build time
         if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'build') {
             return NextResponse.json({
                 url: 'https://example.com/placeholder-during-build.mp4',
