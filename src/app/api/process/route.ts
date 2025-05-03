@@ -1,72 +1,75 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
-import { tmpdir } from 'os';
-import { join } from 'path';
 import { randomUUID } from 'crypto';
-import { execSync } from 'child_process';
-import { writeFileSync, readFileSync } from 'fs';
+
+// URL for the deployed video processor service on Render
+const VIDEO_PROCESSOR_URL = process.env.VIDEO_PROCESSOR_URL || 'http://localhost:8000';
 
 export async function POST(request: Request) {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    // const broll = formData.get('broll') as string;
-
-    if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-
-    const supabase = createSupabaseServerClient();
-    const { data: user } = await supabase.auth.getUser();
-
     try {
-        // Save uploaded file
-        const tempId = randomUUID();
-        const inputPath = join(tmpdir(), `${tempId}-input.mp4`);
-        const outputPath = join(tmpdir(), `${tempId}-output.mp4`);
+        const formData = await request.formData();
+        const file = formData.get('file') as File;
+        const broll = formData.get('broll') as string;
 
-        // Write file to temp
-        const buffer = Buffer.from(await file.arrayBuffer());
-        writeFileSync(inputPath, buffer);
+        if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
 
-        // Run Python script with B-roll
-        execSync(`python scripts/process-video.py "${inputPath}" "${outputPath}"`, {
-            stdio: 'inherit',
+        const supabase = createSupabaseServerClient();
+        const { data: user } = await supabase.auth.getUser();
+
+        // Create a new FormData for the request to the video processor
+        const processorFormData = new FormData();
+        processorFormData.append('file', file);
+        if (broll) {
+            processorFormData.append('broll', broll);
+        }
+
+        // Process the video using the deployed processor service
+        console.log(`Sending video to processor at ${VIDEO_PROCESSOR_URL}/process`);
+        const processorResponse = await fetch(`${VIDEO_PROCESSOR_URL}/process`, {
+            method: 'POST',
+            body: processorFormData,
         });
 
-        // Upload to Supabase Storage
-        const outputBuffer = readFileSync(outputPath);
+        if (!processorResponse.ok) {
+            const errorData = await processorResponse.json();
+            console.error('Video processor error:', errorData);
+            return NextResponse.json(
+                { error: 'Video processing failed', details: errorData },
+                { status: 500 }
+            );
+        }
+
+        // Get the processed video as a blob
+        const processedVideoBlob = await processorResponse.blob();
+
+        // Generate a unique ID for the video
+        const videoId = randomUUID();
+
+        // Upload the processed video to Supabase Storage
         const { data, error } = await supabase.storage
             .from('processed-videos')
-            .upload(`${tempId}.mp4`, outputBuffer);
+            .upload(`${videoId}.mp4`, processedVideoBlob);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase storage error:', error);
+            throw error;
+        }
 
         // Get the public URL
         const { data: { publicUrl } } = supabase.storage
             .from('processed-videos')
             .getPublicUrl(data.path);
 
-        // Store metadata
+        // Store metadata in Supabase
         const { error: dbError } = await supabase.from('videos').insert({
             user_id: user?.user?.id,
             original_name: file.name,
             processed_url: data.path
         });
 
-        if (dbError) throw dbError;
-
-        // Clean up temporary files
-        try {
-            [inputPath, outputPath].forEach(path => {
-                try {
-                    if (path) {
-                        readFileSync(path); // Check if file exists
-                        writeFileSync(path, ''); // Clear file
-                    }
-                } catch (e) {
-                    console.error('Error cleaning up temporary files:', e);
-                }
-            });
-        } catch (e) {
-            console.error('Error cleaning up temporary files:', e);
+        if (dbError) {
+            console.error('Supabase database error:', dbError);
+            throw dbError;
         }
 
         return NextResponse.json({

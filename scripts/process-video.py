@@ -15,12 +15,16 @@ API_KEY = os.getenv('PEXELS_API_KEY')
 WHISPER_MODEL = os.getenv('WHISPER_MODEL', 'base')
 
 # Load search terms
-try:
-    with open('scripts/search_terms.json', 'r') as f:
-        SEARCH_TERMS = json.load(f)
-except Exception as e:
-    print(f"Warning: Could not load search terms JSON: {e}")
-    SEARCH_TERMS = {}
+def load_search_terms():
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(script_dir, 'search_terms.json'), 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Warning: Could not load search terms JSON: {e}")
+        return {}
+
+SEARCH_TERMS = load_search_terms()
 
 def find_search_term(text):
     """Find a good search term for a given text"""
@@ -161,7 +165,9 @@ def process_video(input_path, output_path):
 
         print("\n✨ Processing complete!")
         print(f"🎉 Total b-rolls added: {broll_count}/{MAX_BROLLS}")
-
+        
+        return output_path
+        
     except Exception as e:
         print(f"🔥 Critical error during processing: {str(e)}")
         raise

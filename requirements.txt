@@ -1,6 +1,8 @@
-whisper
-moviepy
-supabase
-python-multipart
-requests
-Pillow 
+moviepy==1.0.3
+openai-whisper==20231117
+python-dotenv==1.0.0
+requests==2.31.0
+Pillow
+flask==2.3.3
+gunicorn==21.2.0
+werkzeug==2.3.7 

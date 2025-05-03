@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  video-processor:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
+      - MAX_BROLLS=5
+      - WHISPER_MODEL=base
+    volumes:
+      - ./scripts:/app/scripts
+      - ./tmp:/tmp
+    restart: unless-stopped
