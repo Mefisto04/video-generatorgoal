@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY scripts/ ./scripts/
-COPY .env .
+COPY --chown=root:root .env* ./ 2>/dev/null || true
 
 # Create an API server for the video processing service
 COPY api_server.py .
