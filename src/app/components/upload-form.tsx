@@ -20,6 +20,45 @@ interface ProcessedVideo {
   captions: string;
 }
 
+export function ExampleShowcase() {
+  return (
+    <Card className="p-8 bg-gradient-to-br from-indigo-50/80 to-purple-50/80 border-0 shadow-xl rounded-2xl overflow-hidden backdrop-blur mt-10">
+      <div className="flex items-center mb-6">
+        <Play className="h-7 w-7 text-purple-600 mr-3" />
+        <h2 className="text-xl font-bold text-slate-800">See the Difference</h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Original Video */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-medium text-slate-700">Original Video</h3>
+          <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
+            <video src="/pitch.mp4" controls className="w-full h-full" />
+          </div>
+          <p className="text-sm text-slate-600">Your raw, unprocessed video</p>
+        </div>
+
+        {/* Captioned Video */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-medium text-slate-700">
+            Professional Result
+          </h3>
+          <div className="aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
+            <video
+              src="/pitch_captioned.mp4"
+              controls
+              className="w-full h-full"
+            />
+          </div>
+          <p className="text-sm text-slate-600">
+            With captions and B-roll overlays
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function UploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
@@ -343,6 +382,9 @@ export function UploadForm() {
           )}
         </Card>
       )}
+
+      {/* Example Showcase */}
+      <ExampleShowcase />
     </div>
   );
 }
